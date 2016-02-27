@@ -3,15 +3,23 @@
 
 #include <lib/base/eerror.h>
 #include <linux/fb.h>
-
-#ifndef FB_DEV
-# define FB_DEV "/dev/fb0"
+#if defined(__sh__)
+	#include <linux/stmfb.h>
 #endif
 
 class fbClass
 {
 	int fbFd;
 	int xRes, yRes, stride, bpp;
+#if defined(__sh__)
+	struct stmfbio_output_configuration outcfg;
+	struct stmfbio_outputinfo outinfo;
+	struct stmfbio_planeinfo planemode;
+	struct stmfbio_var_screeninfo_ex infoex;
+
+	int xResSc, yResSc;
+	int topDiff, leftDiff, rightDiff, bottomDiff;
+#endif
 	int available;
 	struct fb_var_screeninfo screeninfo;
 	fb_cmap cmap;
@@ -23,7 +31,7 @@ class fbClass
 	int m_number_of_pages;
 	int m_phys_mem;
 #ifdef SWIG
-	fbClass(const char *fb=FB_DEV);
+	fbClass(const char *fb="/dev/fb0");
 	~fbClass();
 public:
 #else
@@ -46,13 +54,18 @@ public:
 	unsigned int Stride() { return stride; }
 	fb_cmap *CMAP() { return &cmap; }
 
-	fbClass(const char *fb=FB_DEV);
+	fbClass(const char *fb="/dev/fb0");
 	~fbClass();
 
 			// low level gfx stuff
 	int PutCMAP();
 #endif
 	static fbClass *getInstance();
+#if defined(__sh__)
+	void clearFBblit();
+	int getFBdiff(int ret);
+	void setFBdiff(int top, int right, int left, int bottom);
+#endif
 
 	int lock();
 	void unlock();
